@@ -1,0 +1,141 @@
+<!doctype html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@7.3.1/themes/algolia-min.css" integrity="sha256-HB49n/BZjuqiCtQQf49OdZn63XuKFaxcIHWf0HNKte8=" crossorigin="anonymous">
+  <style>
+    li {
+      max-height: 900px;
+      overflow: hidden;
+      margin-top: 2rem !important;
+      width: calc(33% - 1rem) !important;
+    }
+
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0,0,0); /* Fallback color */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+      overflow: hidden;
+      justify-content: center;
+    }
+    #modal-content {
+      -ms-overflow-style: none;  /* IE 10+ */
+      scrollbar-width: none;  /* Firefox */
+    }
+    #modal-content::-webkit-scrollbar {
+        display: none;  /* Safari and Chrome */
+    }
+
+    #modal-content {
+      background-color: white;
+      max-width: 800px;
+      overflow-y: scroll;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      box-sizing: content-box;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="search-box"></div>
+  </header>
+
+  <main>
+      <div id="hits"></div>
+      <div id="pagination"></div>
+  </main>
+
+  <div id="result-modal" class="modal">
+    <div id="modal-content">
+    </div>
+  </div>
+
+  <script>
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function makeModal(item) {
+      const modal = document.getElementById("result-modal");
+      const modalContent = document.getElementById("modal-content");
+      modalContent.innerHTML = item.innerHTML;
+      modal.style.display = "flex";
+
+      await sleep(1);
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+          window.keydown = null;
+          window.onclick = null;
+        }
+      }
+      window.onkeydown = function(event) {
+        if (event.key === "Escape") {
+          modal.style.display = "none";
+          window.onkeydown = null;
+          window.onclick = null;
+        }
+      }
+    }
+  </script>
+
+  <script type="text/html" id="hit-template">
+    <div class="hit" onclick="makeModal(this)">
+      <span class="title"><b>Title:</b> <i>{{#helpers.highlight}}{ "attribute": "title" }{{/helpers.highlight}}</i></span>
+      <br>
+      <span class="substance"><b>Substance:</b> <i>{{#helpers.highlight}}{ "attribute": "substance" }{{/helpers.highlight}}</i></span>
+      <p class="hit-name">
+        {{#helpers.highlight}}{ "attribute": "report" }{{/helpers.highlight}}
+      </p>
+    </div>
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/algoliasearch@3.33.0/dist/algoliasearchLite.min.js" integrity="sha256-3Laj91VXexjTlFLgL8+vvIq27laXdRmFIcO2miulgEs=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@3.4.0/dist/instantsearch.production.min.js" integrity="sha256-pM0n88cBFRHpSn0N26ETsQdwpA7WAXJDvkHeCLh3ujI=" crossorigin="anonymous"></script>
+  <script>
+    const searchClient = algoliasearch(
+      '9T7X81TF88',
+      '1868a347db4ea615566a328bf8bf5664' // search only API key, not admin API key
+    );
+
+    const search = instantsearch({
+      indexName: 'reports',
+      searchClient,
+      routing: true,
+    });
+
+    search.addWidget(
+      instantsearch.widgets.configure({
+        hitsPerPage: 10,
+      })
+    );
+
+    search.addWidget(
+      instantsearch.widgets.searchBox({
+        container: '#search-box',
+        placeholder: 'Search for reports',
+      })
+    );
+
+    search.addWidget(
+      instantsearch.widgets.hits({
+        container: '#hits',
+        templates: {
+          item: document.getElementById('hit-template').innerHTML,
+          empty: `We didn't find any results for the search <em>"{{query}}"</em>`,
+        },
+      })
+    );
+
+    search.start();
+  </script>
+</body>
